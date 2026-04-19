@@ -1,0 +1,143 @@
+openapi: 3.0.0
+info:
+  title: BanckAPI
+  description: API bancaire - Gestion des comptes, dépôts, retraits et transferts
+  version: 1.0.0
+servers:
+  - url: https://banck-api-production.up.railway.app
+    description: Serveur Railway
+
+paths:
+  /comptes:
+    get:
+      summary: Lister tous les comptes
+      responses:
+        '200':
+          description: Liste des comptes
+          content:
+            application/json:
+              example:
+                - id: 1
+                  nom: Dupont
+                  prenom: Jean
+                  solde: 500.0
+    post:
+      summary: Créer un nouveau compte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nom:
+                  type: string
+                  example: Dupont
+                prenom:
+                  type: string
+                  example: Jean
+                motDePasse:
+                  type: string
+                  example: "1234"
+      responses:
+        '201':
+          description: Compte créé
+        '400':
+          description: Champs manquants
+
+  /comptes/{id}:
+    get:
+      summary: Consulter un compte
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Détails du compte
+        '404':
+          description: Compte non trouvé
+
+  /comptes/{id}/depot:
+    post:
+      summary: Faire un dépôt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                montant:
+                  type: string
+                  example: "500"
+      responses:
+        '200':
+          description: Dépôt effectué
+        '400':
+          description: Dépôt impossible
+
+  /comptes/{id}/retrait:
+    post:
+      summary: Faire un retrait
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                montant:
+                  type: string
+                  example: "200"
+      responses:
+        '200':
+          description: Retrait effectué
+        '400':
+          description: Solde insuffisant
+
+  /comptes/{id}/transfert:
+    post:
+      summary: Transférer de l'argent vers un autre compte
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idCible:
+                  type: string
+                  example: "2"
+                montant:
+                  type: string
+                  example: "100"
+      responses:
+        '200':
+          description: Transfert effectué
+        '400':
+          description: Transfert impossible

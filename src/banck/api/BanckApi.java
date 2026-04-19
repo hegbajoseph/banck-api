@@ -24,14 +24,36 @@ public class BanckApi {
 
         server.createContext("/comptes", new ComptesHandler());
 
-        // ✅ MODIFIÉ : sert le fichier index.html
+        // ✅ Route Swagger UI
+        server.createContext("/swagger", exchange -> {
+            try {
+                InputStream is = new FileInputStream("swagger.html");
+                byte[] bytes = is.readAllBytes();
+                exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "{\"erreur\":\"" + e.getMessage() + "\"}");
+            }
+        });
+
+        // ✅ Route swagger.yaml
+        server.createContext("/swagger.yaml", exchange -> {
+            try {
+                InputStream is = new FileInputStream("swagger.yaml");
+                byte[] bytes = is.readAllBytes();
+                exchange.getResponseHeaders().set("Content-Type", "text/yaml");
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "{\"erreur\":\"" + e.getMessage() + "\"}");
+            }
+        });
+
+        // ✅ Route index.html
         server.createContext("/", exchange -> {
             try {
                 InputStream is = new FileInputStream("index.html");
-                if (is == null) {
-                    sendResponse(exchange, 404, "{\"erreur\":\"Page non trouvée\"}");
-                    return;
-                }
                 byte[] bytes = is.readAllBytes();
                 exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
                 exchange.sendResponseHeaders(200, bytes.length);
