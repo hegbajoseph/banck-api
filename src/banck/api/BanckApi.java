@@ -27,7 +27,7 @@ public class BanckApi {
         // ✅ MODIFIÉ : sert le fichier index.html
         server.createContext("/", exchange -> {
             try {
-                InputStream is = BanckApi.class.getResourceAsStream("/index.html");
+                InputStream is = new FileInputStream("index.html");
                 if (is == null) {
                     sendResponse(exchange, 404, "{\"erreur\":\"Page non trouvée\"}");
                     return;
