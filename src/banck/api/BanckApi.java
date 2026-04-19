@@ -23,7 +23,25 @@ public class BanckApi {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
         server.createContext("/comptes", new ComptesHandler());
-        server.createContext("/", exchange -> sendResponse(exchange, 200, "{\"message\":\"Bienvenue sur BanckAPI\"}"));
+
+        // ✅ MODIFIÉ : sert le fichier index.html
+        server.createContext("/", exchange -> {
+            try {
+                InputStream is = BanckApi.class.getResourceAsStream("/index.html");
+                if (is == null) {
+                    sendResponse(exchange, 404, "{\"erreur\":\"Page non trouvée\"}");
+                    return;
+                }
+                byte[] bytes = is.readAllBytes();
+                exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, 500, "{\"erreur\":\"" + e.getMessage() + "\"}");
+            }
+        });
 
         server.start();
         System.out.println("✅ Serveur démarré sur le port " + port);
@@ -33,16 +51,14 @@ public class BanckApi {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
-            String path = exchange.getRequestURI().getPath(); // ex: /comptes ou /comptes/1/depot
+            String path = exchange.getRequestURI().getPath();
 
-            String[] parts = path.split("/"); // ["", "comptes", "1", "depot"]
+            String[] parts = path.split("/");
 
-            // CORS
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
             exchange.getResponseHeaders().add("Content-Type", "application/json");
 
             try {
-                // POST /comptes → créer un compte
                 if (method.equals("POST") && parts.length == 2) {
                     String body = readBody(exchange);
                     String nom = extractJson(body, "nom");
@@ -57,7 +73,6 @@ public class BanckApi {
                     return;
                 }
 
-                // GET /comptes → lister tous les comptes
                 if (method.equals("GET") && parts.length == 2) {
                     List<Compte> comptes = service.listerComptes();
                     StringBuilder sb = new StringBuilder("[");
@@ -70,7 +85,6 @@ public class BanckApi {
                     return;
                 }
 
-                // GET /comptes/{id} → consulter un compte
                 if (method.equals("GET") && parts.length == 3) {
                     int id = Integer.parseInt(parts[2]);
                     Compte c = service.trouverParId(id);
@@ -79,7 +93,6 @@ public class BanckApi {
                     return;
                 }
 
-                // POST /comptes/{id}/depot
                 if (method.equals("POST") && parts.length == 4 && parts[3].equals("depot")) {
                     int id = Integer.parseInt(parts[2]);
                     String body = readBody(exchange);
@@ -93,7 +106,6 @@ public class BanckApi {
                     return;
                 }
 
-                // POST /comptes/{id}/retrait
                 if (method.equals("POST") && parts.length == 4 && parts[3].equals("retrait")) {
                     int id = Integer.parseInt(parts[2]);
                     String body = readBody(exchange);
@@ -107,7 +119,6 @@ public class BanckApi {
                     return;
                 }
 
-                // POST /comptes/{id}/transfert
                 if (method.equals("POST") && parts.length == 4 && parts[3].equals("transfert")) {
                     int idSource = Integer.parseInt(parts[2]);
                     String body = readBody(exchange);
@@ -142,7 +153,6 @@ public class BanckApi {
         return new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    // Extraction simple de valeur JSON (sans librairie externe)
     static String extractJson(String json, String key) {
         String search = "\"" + key + "\"";
         int idx = json.indexOf(search);
@@ -150,7 +160,6 @@ public class BanckApi {
         int colon = json.indexOf(":", idx);
         int start = json.indexOf("\"", colon + 1);
         if (start == -1) {
-            // valeur numérique
             int numStart = colon + 1;
             while (numStart < json.length() && (json.charAt(numStart) == ' ')) numStart++;
             int numEnd = numStart;
