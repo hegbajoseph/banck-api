@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BanckAPI</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f5f5f5; color: #111; padding: 2rem; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: #666; margin-bottom: 2rem; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid #ddd; margin-bottom: 1.5rem; }
+    .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab.active { color: #111; border-bottom-color: #111; font-weight: 500; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; margin-top: 12px; }
+    label:first-child { margin-top: 0; }
+    input { width: 100%; padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #111; outline: none; }
+    input:focus { border-color: #111; }
+    .btn { padding: 9px 20px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #111; cursor: pointer; margin-top: 16px; }
+    .btn-primary { background: #111; color: #fff; border-color: #111; }
+    .btn-primary:hover { opacity: 0.85; }
+    .result { margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 13px; font-family: monospace; white-space: pre-wrap; line-height: 1.6; }
+    .result.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+    .result.err { background: #fdecea; color: #7f1d1d; border: 1px solid #f5c6c6; }
+    .result.info { background: #f0f0f0; color: #555; border: 1px solid #ddd; }
+    .compte-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .compte-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
+    .compte-id { font-size: 12px; color: #888; }
+    .compte-name { font-size: 14px; font-weight: 500; }
+    .compte-solde { font-size: 14px; font-weight: 500; color: #1b5e20; }
+    h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; margin-left: 6px; background: #e3f2fd; color: #0d47a1; }
+    .sep { height: 1px; background: #e0e0e0; margin: 1rem 0; }
+    .flex { display: flex; gap: 8px; align-items: center; }
+  </style>
+</head>
+<body>
+
+<h1>BanckAPI</h1>
+<p class="sub">Interface de gestion des comptes bancaires</p>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('creer', this)">Créer un compte</button>
+  <button class="tab" onclick="showTab('lister', this)">Comptes</button>
+  <button class="tab" onclick="showTab('operations', this)">Opérations</button>
+  <button class="tab" onclick="showTab('transfert', this)">Transfert</button>
+</div>
+
+<div class="panel active" id="tab-creer">
+  <div class="card">
+    <h3>Créer un nouveau compte</h3>
+    <label>Nom</label>
+    <input id="c-nom" type="text" placeholder="Dupont" />
+    <label>Prénom</label>
+    <input id="c-prenom" type="text" placeholder="Jean" />
+    <label>Mot de passe</label>
+    <input id="c-mdp" type="password" placeholder="••••••" />
+    <div class="flex" style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="creerCompte()">Créer le compte</button>
+      <button class="btn" onclick="clearResult('r-creer')">Effacer</button>
+    </div>
+    <div id="r-creer"></div>
+  </div>
+</div>
+
+<div class="panel" id="tab-lister">
+  <div class="card">
+    <div class="flex" style="justify-content:space-between; margin-bottom:12px;">
+      <h3 style="margin:0;">Liste des comptes</h3>
+      <button class="btn" style="margin-top:0;" onclick="listerComptes()">Actualiser</button>
+    </div>
+    <div id="r-lister"><p style="font-size:13px;color:#888;">Cliquez sur Actualiser pour charger les comptes.</p></div>
+  </div>
+</div>
+
+<div class="panel" id="tab-operations">
+  <div class="card">
+    <h3>Dépôt <span class="badge">POST /comptes/{id}/depot</span></h3>
+    <label>ID du compte</label>
+    <input id="d-id" type="number" placeholder="1" min="1" />
+    <label>Montant (€)</label>
+    <input id="d-montant" type="number" placeholder="500" min="0" step="0.01" />
+    <button class="btn btn-primary" onclick="depot()">Effectuer le dépôt</button>
+    <div id="r-depot"></div>
+  </div>
+  <div class="sep"></div>
+  <div class="card">
+    <h3>Retrait <span class="badge" style="background:#fff8e1;color:#e65100;">POST /comptes/{id}/retrait</span></h3>
+    <label>ID du compte</label>
+    <input id="ret-id" type="number" placeholder="1" min="1" />
+    <label>Montant (€)</label>
+    <input id="ret-montant" type="number" placeholder="200" min="0" step="0.01" />
+    <button class="btn" style="border-color:#e65100;color:#e65100;" onclick="retrait()">Effectuer le retrait</button>
+    <div id="r-retrait"></div>
+  </div>
+</div>
+
+<div class="panel" id="tab-transfert">
+  <div class="card">
+    <h3>Transfert entre comptes <span class="badge">POST /comptes/{id}/transfert</span></h3>
+    <label>Compte source (ID)</label>
+    <input id="t-source" type="number" placeholder="1" min="1" />
+    <label>Compte destinataire (ID)</label>
+    <input id="t-cible" type="number" placeholder="2" min="1" />
+    <label>Montant à transférer (€)</label>
+    <input id="t-montant" type="number" placeholder="100" min="0" step="0.01" />
+    <button class="btn btn-primary" onclick="transfert()">Effectuer le transfert</button>
+    <div id="r-transfert"></div>
+  </div>
+</div>
+
+<script>
+  const BASE = "";
+
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function showResult(id, ok, data) {
+    const el = document.getElementById(id);
+    el.className = 'result ' + (ok ? 'ok' : 'err');
+    el.textContent = JSON.stringify(data, null, 2);
+  }
+
+  function showLoading(id) {
+    const el = document.getElementById(id);
+    el.className = 'result info';
+    el.textContent = 'Chargement...';
+  }
+
+  function clearResult(id) {
+    const el = document.getElementById(id);
+    el.className = '';
+    el.textContent = '';
+  }
+
+  async function apiCall(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(BASE + path, opts);
+    const data = await res.json();
+    return { ok: res.ok, data };
+  }
+
+  async function creerCompte() {
+    const nom = document.getElementById('c-nom').value.trim();
+    const prenom = document.getElementById('c-prenom').value.trim();
+    const motDePasse = document.getElementById('c-mdp').value.trim();
+    if (!nom || !prenom || !motDePasse) { showResult('r-creer', false, { erreur: 'Tous les champs sont requis' }); return; }
+    showLoading('r-creer');
+    try {
+      const { ok, data } = await apiCall('POST', '/comptes', { nom, prenom, motDePasse });
+      showResult('r-creer', ok, data);
+    } catch(e) { showResult('r-creer', false, { erreur: 'Impossible de joindre l\'API : ' + e.message }); }
+  }
+
+  async function listerComptes() {
+    const el = document.getElementById('r-lister');
+    el.innerHTML = '<p style="font-size:13px;color:#888;">Chargement...</p>';
+    try {
+      const { ok, data } = await apiCall('GET', '/comptes');
+      if (!ok || !Array.isArray(data)) { el.innerHTML = '<div class="result err">' + JSON.stringify(data) + '</div>'; return; }
+      if (data.length === 0) { el.innerHTML = '<p style="font-size:13px;color:#888;">Aucun compte trouvé.</p>'; return; }
+      el.innerHTML = '<div class="compte-list">' + data.map(c =>
+        `<div class="compte-item">
+          <div>
+            <div class="compte-id">ID #${c.id}</div>
+            <div class="compte-name">${c.prenom} ${c.nom}</div>
+          </div>
+          <div class="compte-solde">${Number(c.solde).toFixed(2)} €</div>
+        </div>`
+      ).join('') + '</div>';
+    } catch(e) { el.innerHTML = '<div class="result err">Erreur : ' + e.message + '</div>'; }
+  }
+
+  async function depot() {
+    const id = document.getElementById('d-id').value;
+    const montant = document.getElementById('d-montant').value;
+    if (!id || !montant) { showResult('r-depot', false, { erreur: 'ID et montant requis' }); return; }
+    showLoading('r-depot');
+    try {
+      const { ok, data } = await apiCall('POST', `/comptes/${id}/depot`, { montant: String(montant) });
+      showResult('r-depot', ok, data);
+    } catch(e) { showResult('r-depot', false, { erreur: e.message }); }
+  }
+
+  async function retrait() {
+    const id = document.getElementById('ret-id').value;
+    const montant = document.getElementById('ret-montant').value;
+    if (!id || !montant) { showResult('r-retrait', false, { erreur: 'ID et montant requis' }); return; }
+    showLoading('r-retrait');
+    try {
+      const { ok, data } = await apiCall('POST', `/comptes/${id}/retrait`, { montant: String(montant) });
+      showResult('r-retrait', ok, data);
+    } catch(e) { showResult('r-retrait', false, { erreur: e.message }); }
+  }
+
+  async function transfert() {
+    const idSource = document.getElementById('t-source').value;
+    const idCible = document.getElementById('t-cible').value;
+    const montant = document.getElementById('t-montant').value;
+    if (!idSource || !idCible || !montant) { showResult('r-transfert', false, { erreur: 'Tous les champs sont requis' }); return; }
+    showLoading('r-transfert');
+    try {
+      const { ok, data } = await apiCall('POST', `/comptes/${idSource}/transfert`, { idCible: String(idCible), montant: String(montant) });
+      showResult('r-transfert', ok, data);
+    } catch(e) { showResult('r-transfert', false, { erreur: e.message }); }
+  }
+</script>
+
+</body>
+</html>
