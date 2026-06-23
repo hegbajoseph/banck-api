@@ -6,140 +6,169 @@
   <title>BanckAPI</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: #f5f5f5; color: #111; padding: 2rem; }
-    h1 { font-size: 22px; margin-bottom: 6px; }
-    .sub { font-size: 13px; color: #666; margin-bottom: 2rem; }
-    .tabs { display: flex; gap: 4px; border-bottom: 1px solid #ddd; margin-bottom: 1.5rem; }
-    .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: #666; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-    .tab.active { color: #111; border-bottom-color: #111; font-weight: 500; }
+    body {
+      font-family: sans-serif;
+      color: #fff;
+      padding: 2rem;
+      min-height: 100vh;
+      background-image: url('Bank-API-Integration_big-1.webp');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 5, 40, 0.30);
+      z-index: 0;
+    }
+    body > * { position: relative; z-index: 1; }
+    h1 { font-size: 22px; margin-bottom: 6px; color: #fff; }
+    .sub { font-size: 13px; color: #cde; margin-bottom: 2rem; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.3); margin-bottom: 1.5rem; }
+    .tab { padding: 8px 16px; font-size: 14px; cursor: pointer; border: none; background: none; color: #cde; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab.active { color: #fff; border-bottom-color: #4fc3f7; font-weight: 500; }
     .panel { display: none; }
     .panel.active { display: block; }
-    .card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
-    label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; margin-top: 12px; }
+    .card {
+      background: transparent;
+      border: none;
+      padding: 1.25rem 0;
+      margin-bottom: 1rem;
+    }
+    label { font-size: 13px; color: #cde; display: block; margin-bottom: 4px; margin-top: 16px; }
     label:first-child { margin-top: 0; }
-    input { width: 100%; padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #111; outline: none; }
-    input:focus { border-color: #111; }
-    .btn { padding: 9px 20px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #111; cursor: pointer; margin-top: 16px; }
-    .btn-primary { background: #111; color: #fff; border-color: #111; }
-    .btn-primary:hover { opacity: 0.85; }
+    input {
+      width: 100%;
+      padding: 8px 4px;
+      font-size: 14px;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.5);
+      border-radius: 0;
+      background: transparent;
+      color: #fff;
+      outline: none;
+    }
+    input::placeholder { color: rgba(255,255,255,0.4); }
+    input:focus { border-bottom-color: #4fc3f7; }
+    .btn {
+      padding: 9px 20px;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: rgba(255,255,255,0.2); }
+    .btn-primary { background: #0d47a1; border-color: #1565c0; color: #fff; }
+    .btn-primary:hover { background: #1565c0; }
     .result { margin-top: 12px; padding: 12px; border-radius: 8px; font-size: 13px; font-family: monospace; white-space: pre-wrap; line-height: 1.6; }
-    .result.ok { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
-    .result.err { background: #fdecea; color: #7f1d1d; border: 1px solid #f5c6c6; }
-    .result.info { background: #f0f0f0; color: #555; border: 1px solid #ddd; }
+    .result.ok { background: rgba(27,94,32,0.5); color: #a5d6a7; border: 1px solid #388e3c; }
+    .result.err { background: rgba(127,29,29,0.5); color: #ffcdd2; border: 1px solid #c62828; }
+    .result.info { background: rgba(255,255,255,0.08); color: #cde; border: 1px solid rgba(255,255,255,0.15); }
     .compte-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-    .compte-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; }
-    .compte-id { font-size: 12px; color: #888; }
-    .compte-name { font-size: 14px; font-weight: 500; }
-    .compte-solde { font-size: 14px; font-weight: 500; color: #1b5e20; }
-    h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; }
-    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; margin-left: 6px; background: #e3f2fd; color: #0d47a1; }
-    .sep { height: 1px; background: #e0e0e0; margin: 1rem 0; }
+    .compte-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+    }
+    .compte-id { font-size: 12px; color: #99aacc; }
+    .compte-name { font-size: 14px; font-weight: 500; color: #fff; }
+    .compte-solde { font-size: 14px; font-weight: 500; color: #81c784; }
+    h3 { font-size: 15px; font-weight: 500; margin-bottom: 12px; color: #fff; }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 99px; margin-left: 6px; background: rgba(13,71,161,0.5); color: #90caf9; }
+    .sep { height: 1px; background: rgba(255,255,255,0.15); margin: 1rem 0; }
     .flex { display: flex; gap: 8px; align-items: center; }
   </style>
 </head>
 <body>
-
 <h1>BanckAPI</h1>
 <p class="sub">Interface de gestion des comptes bancaires</p>
-
 <div class="tabs">
   <button class="tab active" onclick="showTab('creer', this)">Créer un compte</button>
   <button class="tab" onclick="showTab('lister', this)">Comptes</button>
   <button class="tab" onclick="showTab('operations', this)">Opérations</button>
   <button class="tab" onclick="showTab('transfert', this)">Transfert</button>
 </div>
-
 <div class="panel active" id="tab-creer">
   <div class="card">
     <h3>Créer un nouveau compte</h3>
-    <label>Nom</label>
-    <input id="c-nom" type="text" placeholder="Dupont" />
-    <label>Prénom</label>
-    <input id="c-prenom" type="text" placeholder="Jean" />
-    <label>Mot de passe</label>
-    <input id="c-mdp" type="password" placeholder="••••••" />
-    <div class="flex" style="margin-top:16px;">
+    <label>Nom</label><input id="c-nom" type="text" placeholder="Dupont" />
+    <label>Prénom</label><input id="c-prenom" type="text" placeholder="Jean" />
+    <label>Mot de passe</label><input id="c-mdp" type="password" placeholder="••••••" />
+    <div class="flex" style="margin-top:20px;">
       <button class="btn btn-primary" onclick="creerCompte()">Créer le compte</button>
       <button class="btn" onclick="clearResult('r-creer')">Effacer</button>
     </div>
     <div id="r-creer"></div>
   </div>
 </div>
-
 <div class="panel" id="tab-lister">
   <div class="card">
-    <div class="flex" style="justify-content:space-between; margin-bottom:12px;">
+    <div class="flex" style="justify-content:space-between;margin-bottom:12px;">
       <h3 style="margin:0;">Liste des comptes</h3>
       <button class="btn" style="margin-top:0;" onclick="listerComptes()">Actualiser</button>
     </div>
-    <div id="r-lister"><p style="font-size:13px;color:#888;">Cliquez sur Actualiser pour charger les comptes.</p></div>
+    <div id="r-lister"><p style="font-size:13px;color:#cde;">Cliquez sur Actualiser pour charger les comptes.</p></div>
   </div>
 </div>
-
 <div class="panel" id="tab-operations">
   <div class="card">
     <h3>Dépôt <span class="badge">POST /comptes/{id}/depot</span></h3>
-    <label>ID du compte</label>
-    <input id="d-id" type="number" placeholder="1" min="1" />
-    <label>Montant (€)</label>
-    <input id="d-montant" type="number" placeholder="500" min="0" step="0.01" />
+    <label>ID du compte</label><input id="d-id" type="number" placeholder="1" min="1" />
+    <label>Montant (XAF)</label><input id="d-montant" type="number" placeholder="500" min="0" step="0.01" />
     <button class="btn btn-primary" onclick="depot()">Effectuer le dépôt</button>
     <div id="r-depot"></div>
   </div>
   <div class="sep"></div>
   <div class="card">
-    <h3>Retrait <span class="badge" style="background:#fff8e1;color:#e65100;">POST /comptes/{id}/retrait</span></h3>
-    <label>ID du compte</label>
-    <input id="ret-id" type="number" placeholder="1" min="1" />
-    <label>Montant (€)</label>
-    <input id="ret-montant" type="number" placeholder="200" min="0" step="0.01" />
-    <button class="btn" style="border-color:#e65100;color:#e65100;" onclick="retrait()">Effectuer le retrait</button>
+    <h3>Retrait <span class="badge" style="background:rgba(230,81,0,0.3);color:#ffcc80;">POST /comptes/{id}/retrait</span></h3>
+    <label>ID du compte</label><input id="ret-id" type="number" placeholder="1" min="1" />
+    <label>Montant (XAF)</label><input id="ret-montant" type="number" placeholder="200" min="0" step="0.01" />
+    <button class="btn" style="border-color:#e65100;color:#ffcc80;" onclick="retrait()">Effectuer le retrait</button>
     <div id="r-retrait"></div>
   </div>
 </div>
-
 <div class="panel" id="tab-transfert">
   <div class="card">
     <h3>Transfert entre comptes <span class="badge">POST /comptes/{id}/transfert</span></h3>
-    <label>Compte source (ID)</label>
-    <input id="t-source" type="number" placeholder="1" min="1" />
-    <label>Compte destinataire (ID)</label>
-    <input id="t-cible" type="number" placeholder="2" min="1" />
-    <label>Montant à transférer (€)</label>
-    <input id="t-montant" type="number" placeholder="100" min="0" step="0.01" />
+    <label>Compte source (ID)</label><input id="t-source" type="number" placeholder="1" min="1" />
+    <label>Compte destinataire (ID)</label><input id="t-cible" type="number" placeholder="2" min="1" />
+    <label>Montant (XAF)</label><input id="t-montant" type="number" placeholder="100" min="0" step="0.01" />
     <button class="btn btn-primary" onclick="transfert()">Effectuer le transfert</button>
     <div id="r-transfert"></div>
   </div>
 </div>
-
 <script>
   const BASE = "";
-
   function showTab(name, btn) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
   }
-
   function showResult(id, ok, data) {
     const el = document.getElementById(id);
     el.className = 'result ' + (ok ? 'ok' : 'err');
     el.textContent = JSON.stringify(data, null, 2);
   }
-
   function showLoading(id) {
     const el = document.getElementById(id);
     el.className = 'result info';
     el.textContent = 'Chargement...';
   }
-
   function clearResult(id) {
     const el = document.getElementById(id);
-    el.className = '';
-    el.textContent = '';
+    el.className = ''; el.textContent = '';
   }
-
   async function apiCall(method, path, body) {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
     if (body) opts.body = JSON.stringify(body);
@@ -147,7 +176,6 @@
     const data = await res.json();
     return { ok: res.ok, data };
   }
-
   async function creerCompte() {
     const nom = document.getElementById('c-nom').value.trim();
     const prenom = document.getElementById('c-prenom').value.trim();
@@ -157,28 +185,20 @@
     try {
       const { ok, data } = await apiCall('POST', '/comptes', { nom, prenom, motDePasse });
       showResult('r-creer', ok, data);
-    } catch(e) { showResult('r-creer', false, { erreur: 'Impossible de joindre l\'API : ' + e.message }); }
+    } catch(e) { showResult('r-creer', false, { erreur: "Impossible de joindre l'API : " + e.message }); }
   }
-
   async function listerComptes() {
     const el = document.getElementById('r-lister');
-    el.innerHTML = '<p style="font-size:13px;color:#888;">Chargement...</p>';
+    el.innerHTML = '<p style="font-size:13px;color:#cde;">Chargement...</p>';
     try {
       const { ok, data } = await apiCall('GET', '/comptes');
       if (!ok || !Array.isArray(data)) { el.innerHTML = '<div class="result err">' + JSON.stringify(data) + '</div>'; return; }
-      if (data.length === 0) { el.innerHTML = '<p style="font-size:13px;color:#888;">Aucun compte trouvé.</p>'; return; }
+      if (data.length === 0) { el.innerHTML = '<p style="font-size:13px;color:#cde;">Aucun compte trouvé.</p>'; return; }
       el.innerHTML = '<div class="compte-list">' + data.map(c =>
-        `<div class="compte-item">
-          <div>
-            <div class="compte-id">ID #${c.id}</div>
-            <div class="compte-name">${c.prenom} ${c.nom}</div>
-          </div>
-          <div class="compte-solde">${Number(c.solde).toFixed(2)} €</div>
-        </div>`
+        `<div class="compte-item"><div><div class="compte-id">ID #${c.id}</div><div class="compte-name">${c.prenom} ${c.nom}</div></div><div class="compte-solde">${Number(c.solde).toFixed(2)} XAF</div></div>`
       ).join('') + '</div>';
     } catch(e) { el.innerHTML = '<div class="result err">Erreur : ' + e.message + '</div>'; }
   }
-
   async function depot() {
     const id = document.getElementById('d-id').value;
     const montant = document.getElementById('d-montant').value;
@@ -189,7 +209,6 @@
       showResult('r-depot', ok, data);
     } catch(e) { showResult('r-depot', false, { erreur: e.message }); }
   }
-
   async function retrait() {
     const id = document.getElementById('ret-id').value;
     const montant = document.getElementById('ret-montant').value;
@@ -200,7 +219,6 @@
       showResult('r-retrait', ok, data);
     } catch(e) { showResult('r-retrait', false, { erreur: e.message }); }
   }
-
   async function transfert() {
     const idSource = document.getElementById('t-source').value;
     const idCible = document.getElementById('t-cible').value;
@@ -213,6 +231,5 @@
     } catch(e) { showResult('r-transfert', false, { erreur: e.message }); }
   }
 </script>
-
 </body>
 </html>

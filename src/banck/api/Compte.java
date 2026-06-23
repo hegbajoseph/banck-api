@@ -20,11 +20,10 @@ public class Compte {
     public String getPrenom() { return prenom; }
     public double getSolde() { return solde; }
     public String getMotDePasse() { return motDePasse; }
-
     public void setSolde(double solde) { this.solde = solde; }
 
     public String toJson() {
-        return String.format(
+        return String.format(java.util.Locale.US,
             "{\"id\":%d,\"nom\":\"%s\",\"prenom\":\"%s\",\"solde\":%.2f}",
             id, nom, prenom, solde
         );

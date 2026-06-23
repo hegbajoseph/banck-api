@@ -14,7 +14,7 @@ public class BanckApi {
     static CompteService service = new CompteService();
 
     public static void main(String[] args) throws IOException {
-        int port = 8080;
+        int port = 7070;
         try {
             String envPort = System.getenv("PORT");
             if (envPort != null) port = Integer.parseInt(envPort);
@@ -24,7 +24,6 @@ public class BanckApi {
 
         server.createContext("/comptes", new ComptesHandler());
 
-        // ✅ Route Swagger UI
         server.createContext("/swagger", exchange -> {
             try {
                 InputStream is = new FileInputStream("swagger.html");
@@ -37,7 +36,6 @@ public class BanckApi {
             }
         });
 
-        // ✅ Route swagger.yaml
         server.createContext("/swagger.yaml", exchange -> {
             try {
                 InputStream is = new FileInputStream("swagger.yaml");
@@ -50,23 +48,32 @@ public class BanckApi {
             }
         });
 
-        // ✅ Route index.html
         server.createContext("/", exchange -> {
             try {
                 InputStream is = new FileInputStream("index.html");
                 byte[] bytes = is.readAllBytes();
                 exchange.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
                 exchange.sendResponseHeaders(200, bytes.length);
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(bytes);
-                }
+                try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
             } catch (Exception e) {
                 sendResponse(exchange, 500, "{\"erreur\":\"" + e.getMessage() + "\"}");
             }
         });
 
+        server.createContext("/Bank-API-Integration_big-1.webp", exchange -> {
+            try {
+                InputStream is = new FileInputStream("Bank-API-Integration_big-1.webp");
+                byte[] bytes = is.readAllBytes();
+                exchange.getResponseHeaders().set("Content-Type", "image/webp");
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) { os.write(bytes); }
+            } catch (Exception e) {
+                sendResponse(exchange, 404, "{\"erreur\":\"Image non trouvee\"}");
+            }
+        });
+
         server.start();
-        System.out.println("✅ Serveur démarré sur le port " + port);
+        System.out.println("Serveur demarre sur le port " + port);
     }
 
     static class ComptesHandler implements HttpHandler {
@@ -74,7 +81,6 @@ public class BanckApi {
         public void handle(HttpExchange exchange) throws IOException {
             String method = exchange.getRequestMethod();
             String path = exchange.getRequestURI().getPath();
-
             String[] parts = path.split("/");
 
             exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
@@ -110,7 +116,7 @@ public class BanckApi {
                 if (method.equals("GET") && parts.length == 3) {
                     int id = Integer.parseInt(parts[2]);
                     Compte c = service.trouverParId(id);
-                    if (c == null) { sendResponse(exchange, 404, "{\"erreur\":\"Compte non trouvé\"}"); return; }
+                    if (c == null) { sendResponse(exchange, 404, "{\"erreur\":\"Compte non trouve\"}"); return; }
                     sendResponse(exchange, 200, c.toJson());
                     return;
                 }
@@ -121,9 +127,10 @@ public class BanckApi {
                     double montant = Double.parseDouble(extractJson(body, "montant"));
                     if (service.depot(id, montant)) {
                         Compte c = service.trouverParId(id);
-                        sendResponse(exchange, 200, "{\"message\":\"Dépôt effectué\",\"nouveau_solde\":" + c.getSolde() + "}");
+                        sendResponse(exchange, 200, String.format(java.util.Locale.US,
+                            "{\"message\":\"Depot effectue\",\"nouveau_solde\":%.2f}", c.getSolde()));
                     } else {
-                        sendResponse(exchange, 400, "{\"erreur\":\"Dépôt impossible\"}");
+                        sendResponse(exchange, 400, "{\"erreur\":\"Depot impossible\"}");
                     }
                     return;
                 }
@@ -134,7 +141,8 @@ public class BanckApi {
                     double montant = Double.parseDouble(extractJson(body, "montant"));
                     if (service.retrait(id, montant)) {
                         Compte c = service.trouverParId(id);
-                        sendResponse(exchange, 200, "{\"message\":\"Retrait effectué\",\"nouveau_solde\":" + c.getSolde() + "}");
+                        sendResponse(exchange, 200, String.format(java.util.Locale.US,
+                            "{\"message\":\"Retrait effectue\",\"nouveau_solde\":%.2f}", c.getSolde()));
                     } else {
                         sendResponse(exchange, 400, "{\"erreur\":\"Solde insuffisant ou compte introuvable\"}");
                     }
@@ -147,14 +155,14 @@ public class BanckApi {
                     int idCible = Integer.parseInt(extractJson(body, "idCible"));
                     double montant = Double.parseDouble(extractJson(body, "montant"));
                     if (service.transfert(idSource, idCible, montant)) {
-                        sendResponse(exchange, 200, "{\"message\":\"Transfert effectué\"}");
+                        sendResponse(exchange, 200, "{\"message\":\"Transfert effectue\"}");
                     } else {
                         sendResponse(exchange, 400, "{\"erreur\":\"Transfert impossible (solde insuffisant ou compte introuvable)\"}");
                     }
                     return;
                 }
 
-                sendResponse(exchange, 404, "{\"erreur\":\"Route non trouvée\"}");
+                sendResponse(exchange, 404, "{\"erreur\":\"Route non trouvee\"}");
 
             } catch (Exception e) {
                 sendResponse(exchange, 500, "{\"erreur\":\"Erreur serveur : " + e.getMessage() + "\"}");
@@ -176,19 +184,51 @@ public class BanckApi {
     }
 
     static String extractJson(String json, String key) {
-        String search = "\"" + key + "\"";
-        int idx = json.indexOf(search);
-        if (idx == -1) return null;
-        int colon = json.indexOf(":", idx);
-        int start = json.indexOf("\"", colon + 1);
-        if (start == -1) {
-            int numStart = colon + 1;
-            while (numStart < json.length() && (json.charAt(numStart) == ' ')) numStart++;
-            int numEnd = numStart;
-            while (numEnd < json.length() && (Character.isDigit(json.charAt(numEnd)) || json.charAt(numEnd) == '.')) numEnd++;
-            return json.substring(numStart, numEnd);
+        try {
+            String search = "\"" + key + "\"";
+            int idx = json.indexOf(search);
+            if (idx == -1) return null;
+            int colon = json.indexOf(":", idx + search.length());
+            if (colon == -1) return null;
+            int pos = colon + 1;
+            while (pos < json.length() && json.charAt(pos) == ' ') pos++;
+            if (pos >= json.length()) return null;
+            char first = json.charAt(pos);
+            if (first == '"') {
+                StringBuilder sb = new StringBuilder();
+                pos++;
+                while (pos < json.length()) {
+                    char c = json.charAt(pos);
+                    if (c == '\\' && pos + 1 < json.length()) {
+                        pos++;
+                        char escaped = json.charAt(pos);
+                        switch (escaped) {
+                            case '"': sb.append('"'); break;
+                            case '\\': sb.append('\\'); break;
+                            case 'n': sb.append('\n'); break;
+                            case 't': sb.append('\t'); break;
+                            default: sb.append(escaped);
+                        }
+                    } else if (c == '"') {
+                        break;
+                    } else {
+                        sb.append(c);
+                    }
+                    pos++;
+                }
+                return sb.toString();
+            } else {
+                int numEnd = pos;
+                while (numEnd < json.length() &&
+                       (Character.isDigit(json.charAt(numEnd)) ||
+                        json.charAt(numEnd) == '.' ||
+                        json.charAt(numEnd) == '-')) {
+                    numEnd++;
+                }
+                return json.substring(pos, numEnd);
+            }
+        } catch (Exception e) {
+            return null;
         }
-        int end = json.indexOf("\"", start + 1);
-        return json.substring(start + 1, end);
     }
 }
